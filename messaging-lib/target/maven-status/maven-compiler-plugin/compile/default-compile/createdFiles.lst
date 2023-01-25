@@ -1,0 +1,4 @@
+com/br/adrianmorais/annotations/ExecuteMessageEndPoint.class
+com/br/adrianmorais/annotations/infra/rabbitmq/ConnectionProvider.class
+com/br/adrianmorais/annotations/infra/rabbitmq/MessageHandler.class
+com/br/adrianmorais/annotations/MessageEndPoint.class

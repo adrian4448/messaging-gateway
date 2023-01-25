@@ -1,4 +1,4 @@
-package com.br.adrianm.messaginggateway.infra.rabbitmq;
+package com.br.adrianm.messaginggateway.infra.rabbitmq.pojo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

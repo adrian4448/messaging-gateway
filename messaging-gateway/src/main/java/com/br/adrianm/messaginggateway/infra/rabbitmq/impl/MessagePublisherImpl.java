@@ -2,7 +2,7 @@ package com.br.adrianm.messaginggateway.infra.rabbitmq.impl;
 
 import com.br.adrianm.messaginggateway.config.exceptions.SendMessageException;
 import com.br.adrianm.messaginggateway.infra.rabbitmq.MessagePublisher;
-import com.br.adrianm.messaginggateway.infra.rabbitmq.MessageReturnContext;
+import com.br.adrianm.messaginggateway.infra.rabbitmq.pojo.MessageReturnContext;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.DeliverCallback;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,6 +54,7 @@ public class MessagePublisherImpl implements MessagePublisher {
             BasicProperties props = new BasicProperties()
                     .builder()
                     .headers(headers)
+                    .replyTo(callbackQueueName)
                     .build();
 
             channel.basicPublish("", queue, props, message.getBytes());
@@ -64,10 +65,14 @@ public class MessagePublisherImpl implements MessagePublisher {
                 if (delivery.getProperties().getHeaders().get("END_POINT").toString().equals(endpoint) &&
                         delivery.getProperties().getHeaders().get("MESSAGE_ID").toString().equals(messageId)) {
                     context.setResponseJson(messageReceived);
+
+                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                 }
             };
 
-            channel.basicConsume(callbackQueueName, true, deliverCallback, (consumerTag, delivery) -> { });
+            boolean autoAck = true;
+
+            channel.basicConsume(callbackQueueName, autoAck, deliverCallback, (consumerTag, delivery) -> { });
 
             do { } while (context.getResponseJson() == null);
 
