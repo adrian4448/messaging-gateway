@@ -2,7 +2,7 @@ package com.br.adrianm.messaginggateway.infra.rabbitmq.impl;
 
 import com.br.adrianm.messaginggateway.config.exceptions.SendMessageException;
 import com.br.adrianm.messaginggateway.infra.rabbitmq.MessagePublisher;
-import com.br.adrianm.messaginggateway.infra.rabbitmq.pojo.MessageReturnContext;
+import com.br.adrianm.messaginggateway.infra.rabbitmq.pojo.ContextMessage;
 import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.DeliverCallback;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +13,7 @@ import java.util.UUID;
 
 @Component
 public class MessagePublisherImpl implements MessagePublisher {
+
     @Autowired
     private ConnectionBroker connection;
 
@@ -39,12 +40,11 @@ public class MessagePublisherImpl implements MessagePublisher {
 
     @Override
     public Object publishMessage(String message, String queue, String endpoint) {
-        var context = new MessageReturnContext();
-
         try {
             var callbackQueueName = queue + "_callback";
             var channel = connection.getChannel();
             var headers = new HashMap<String, Object>();
+            var contextMessage = new ContextMessage();
             var messageId = UUID.randomUUID().toString();
 
             headers.put("END_POINT", endpoint);
@@ -64,19 +64,15 @@ public class MessagePublisherImpl implements MessagePublisher {
 
                 if (delivery.getProperties().getHeaders().get("END_POINT").toString().equals(endpoint) &&
                         delivery.getProperties().getHeaders().get("MESSAGE_ID").toString().equals(messageId)) {
-                    context.setResponseJson(messageReceived);
-
-                    channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                    contextMessage.setMessage(messageReceived);
                 }
             };
 
-            boolean autoAck = true;
+            channel.basicConsume(callbackQueueName, true, deliverCallback, (consumerTag, delivery) -> { });
 
-            channel.basicConsume(callbackQueueName, autoAck, deliverCallback, (consumerTag, delivery) -> { });
+            do {} while (contextMessage.getMessage() == null);
 
-            do { } while (context.getResponseJson() == null);
-
-            return context.getResponseJson();
+            return contextMessage.getMessage();
         } catch (Exception e) {
             throw new SendMessageException("Ocorreu um erro ao enviar a mensagem");
         }

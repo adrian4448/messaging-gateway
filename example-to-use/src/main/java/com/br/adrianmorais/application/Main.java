@@ -1,9 +1,10 @@
 package com.br.adrianmorais.application;
 
 import com.br.adrianmorais.annotations.ExecuteMessageEndPoint;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
+import com.br.adrianmorais.annotations.infra.rabbitmq.ConnectionProvider;
 import com.rabbitmq.client.DeliverCallback;
+
+import java.util.List;
 
 public class Main {
 
@@ -11,28 +12,22 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost("localhost");
-            factory.setUsername("admin");
-            factory.setPassword("admin");
-
-            System.setProperty("RABBITMQ_HOST", "localhost");
-            System.setProperty("RABBITMQ_USER", "admin");
-            System.setProperty("RABBITMQ_PASSWORD", "admin");
-
-            Connection connection = factory.newConnection();
+            ConnectionProvider connectionProvider = ConnectionProvider.getConnectionInstance();
+            connectionProvider.setConnection("localhost", "admin", "admin");
+            var connection = connectionProvider.getConnection();
 
             var channel = connection.createChannel();
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                 try {
-                    ExecuteMessageEndPoint.executeEndPoint(delivery, TesteClasse.class);
+                    // Aqui voce pode Colocar todas as classes que estiverem anotadas com o @MessageEndPoint
+                    ExecuteMessageEndPoint.executeEndPoint(delivery, List.of(TesteClasse.class, Teste2.class));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             };
 
-            channel.basicConsume(PROJECT_QUEUE, deliverCallback, (consumerTag, delivery) -> { });
+            channel.basicConsume(PROJECT_QUEUE, true, deliverCallback, (consumerTag, delivery) -> { });
 
             do { } while (true);
         } catch (Exception e) {

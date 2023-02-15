@@ -10,13 +10,9 @@ public class MessageHandler {
 
     private ConnectionProvider connectionProvider = ConnectionProvider.getConnectionInstance();
 
-    public void sendCallbackMessage(Delivery delivery, String endpoint, String returnedValue) throws IOException {
+    public void sendCallbackMessage(Delivery delivery, String endpoint, String returnedValue) throws Exception {
         var messageId = delivery.getProperties().getHeaders().get("MESSAGE_ID").toString();
         var queue = delivery.getProperties().getReplyTo();
-
-        connectionProvider.setConnection(System.getProperty("RABBITMQ_HOST"),
-                System.getProperty("RABBITMQ_USER"),
-                System.getProperty("RABBITMQ_PASSWORD"));
 
         var con = connectionProvider.getConnection();
         var channel = con.createChannel();
@@ -31,8 +27,8 @@ public class MessageHandler {
                 .headers(headers)
                 .build();
 
-
         channel.basicPublish("", queue, props, returnedValue.toString().getBytes());
+        channel.close();
     }
 
 }

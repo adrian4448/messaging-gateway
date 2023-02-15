@@ -7,6 +7,6 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MessageReturnContext {
-    private Object responseJson;
+public class ContextMessage {
+    private String message;
 }

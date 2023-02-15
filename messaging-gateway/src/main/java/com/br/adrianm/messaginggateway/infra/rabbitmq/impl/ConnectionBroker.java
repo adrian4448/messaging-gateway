@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class ConnectionBroker {
 
     private Connection connection;
+    private Channel channel;
 
     private ConnectionBroker() {
 
@@ -44,7 +45,11 @@ public class ConnectionBroker {
 
     protected Channel getChannel() {
         try {
-            return connection.createChannel();
+            if (channel == null) {
+                this.channel = connection.createChannel();
+                return channel;
+            }
+            return channel;
         } catch(Exception e) {
             throw new ConnectionException("Erro ao obter o channel");
         }
